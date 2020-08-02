@@ -33,18 +33,16 @@ class TMDBClient {
         case getRequestToken
         case login
         case createSessionId
+        case webAuth
         
         // this associated value generates the full path
         var stringValue: String {
             switch self {
-            case .getWatchlist:
-                return Endpoints.base + "/account/\(Auth.accountId)/watchlist/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"
-            case .getRequestToken:
-                return Endpoints.base + "/authentication/token/new" + Endpoints.apiKeyParam
-            case .login:
-                return Endpoints.base + "/authentication/token/validate_with_login" + Endpoints.apiKeyParam
-            case .createSessionId:
-                return Endpoints.base + "/authentication/session/new" + Endpoints.apiKeyParam
+            case .getWatchlist: return Endpoints.base + "/account/\(Auth.accountId)/watchlist/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"
+            case .getRequestToken: return Endpoints.base + "/authentication/token/new" + Endpoints.apiKeyParam
+            case .login: return Endpoints.base + "/authentication/token/validate_with_login" + Endpoints.apiKeyParam
+            case .createSessionId: return Endpoints.base + "/authentication/session/new" + Endpoints.apiKeyParam
+            case .webAuth: return "https://www.themoviedb.org/authenticate/\(Auth.requestToken)?redirect_to=themoviemanager:authenticate"
             }
         }
         
