@@ -31,6 +31,8 @@ class TMDBClient {
         // get the watchlist
         case getWatchlist
         case getRequestToken
+        case login
+        case createSessionId
         
         // this associated value generates the full path
         var stringValue: String {
@@ -38,7 +40,11 @@ class TMDBClient {
             case .getWatchlist:
                 return Endpoints.base + "/account/\(Auth.accountId)/watchlist/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"
             case .getRequestToken:
-                return Endpoints.base + "/autentication/token/new" + Endpoints.apiKeyParam
+                return Endpoints.base + "/authentication/token/new" + Endpoints.apiKeyParam
+            case .login:
+                return Endpoints.base + "/authentication/token/validate_with_login" + Endpoints.apiKeyParam
+            case .createSessionId:
+                return Endpoints.base + "/authentication/session/new" + Endpoints.apiKeyParam
             }
         }
         
@@ -46,6 +52,54 @@ class TMDBClient {
         var url: URL {
             return URL(string: stringValue)!
         }
+    }
+    
+    class func login(username: String, password: String, completion: @escaping (Bool, Error?) -> Void) {
+        var request = URLRequest(url: Endpoints.login.url)
+        request.httpMethod = "POST"
+        request.addValue("applicaton/json", forHTTPHeaderField: "Content-Type")
+        let body = LoginRequest(username: username, password: password, requestToken: Auth.requestToken)
+        request.httpBody = try! JSONEncoder().encode(body)
+        let task = URLSession.shared.dataTask(with: request) {
+            (data, response, error) in guard let data = data else {
+                completion(false, error)
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let responseObject = try decoder.decode(ResponseTokenResponse.self, from: data)
+                Auth.requestToken = responseObject.requestToken
+                completion(true, nil)
+            } catch {
+                completion(false, error)
+            }
+        }
+        task.resume()
+    }
+    
+    class func createSessionId(completion: @escaping (Bool, Error?) -> Void) {
+        var request = URLRequest(url: Endpoints.createSessionId.url)
+        request.httpMethod = "POST"
+        request.addValue("applicaton/json", forHTTPHeaderField: "Content-Type")
+        let body = PostSession(requestToken: Auth.requestToken)
+        request.httpBody = try! JSONEncoder().encode(body)
+        let task = URLSession.shared.dataTask(with: request) {
+            (data, response, error) in guard let data = data else {
+                completion(false, error)
+                return
+            }
+            
+            do {
+                let decoder = JSONDecoder()
+                let responseObject = try decoder.decode(SessionResponse.self, from: data)
+                Auth.sessionId = responseObject.sessionId
+                completion(true, nil)
+            } catch {
+                completion(false, error)
+            }
+        }
+        task.resume()
     }
     
     // method to return the watchlist; the typepath is an array of type Movie
